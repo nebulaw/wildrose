@@ -13,37 +13,59 @@ class WhiteCar():
     COLORKEY = (0, 0, 0)
 
     ST_IDLE = 0
-    ST_DAMAGE = 1
+    ST_RUN = 1
+    ST_RUSH = 2
+    ST_DAMAGE = 3
+    ST_DIE = 4
 
-    def __init__(self, full_width=False):
+    def __init__(self, fill_width=False):
         self.frame = 0
         self.current_time = pygame.time.get_ticks()
         self.updated_time = pygame.time.get_ticks()
         self.cooldown = 120
-        self.sprite = self.__load_sprite("static/white-cat-idle.png")
-        self.sprite_surfaces = []
-        for frame in range(6):
-            surface = pygame.Surface((self.WIDTH, self.HEIGHT)).convert_alpha()
-            surface.blit(self.sprite, (0, 0), (0, (frame * self.HEIGHT), self.WIDTH, self.HEIGHT))
-            if full_width:
-                surface = pygame.transform.scale(surface, (400, 400))
-            else:
-                surface = pygame.transform.scale(surface, (self.WIDTH * self.SCALE, self.HEIGHT * self.SCALE))
-            surface.set_colorkey(self.COLORKEY)
-            self.sprite_surfaces.append(surface)
+        self.action = self.ST_IDLE
+        self.animation = []
+        for action in ["idle", "run", "rush", "damage", "die",]:
+            # load image for the action
+            image = self.__load_sprite(f"static/white-cat-{action}.png")
+            # calculate how many frames it has
+            frames = int(image.get_height() / self.HEIGHT)
+            # actions actually store surfaces for each sprite
+            action_frames = []
+            for frame in range(frames):
+                surface = pygame.Surface((self.WIDTH, self.HEIGHT)).convert_alpha()
+                surface.blit(image, (0, 0), (0, (frame * self.HEIGHT), self.WIDTH, self.HEIGHT))
+                if fill_width:
+                    surface = pygame.transform.scale(surface, (400, 400))
+                else:
+                    surface = pygame.transform.scale(surface, (self.WIDTH * self.SCALE, self.HEIGHT * self.SCALE))
+                surface.set_colorkey(self.COLORKEY)
+                action_frames.append(surface)
+            self.animation.append(action_frames)
+        pass
 
     def __load_sprite(self, image):
         return pygame.image.load(image).convert_alpha()
 
+    def set_action(self, action=ST_IDLE):
+        self.action = action
+
+    def toggle_rush(self, ):
+        if self.action == self.ST_RUSH:
+            self.action = self.ST_IDLE
+        else:
+            self.action = self.ST_RUSH
+
     def display(self, root_surface, action=ST_IDLE):
         if root_surface is None:
-            return
+            return action
         # here we should add position variables for the class
         self.current_time = pygame.time.get_ticks()
         if self.current_time - self.updated_time >= self.cooldown:
-            self.frame = (self.frame + 1) % 6
+            self.frame = (self.frame + 1) % len(self.animation[self.action])
             self.updated_time = self.current_time
-        root_surface.blit(self.sprite_surfaces[self.frame], (0, 0))
+        self.frame = 0 if self.frame >= len(self.animation[self.action]) else self.frame
+        root_surface.blit(self.animation[self.action][self.frame], (0, 0))
 
 
 class WildroseGame:
@@ -56,9 +78,7 @@ class WildroseGame:
         pygame.display.set_caption("Wildrose")
         self.clock = pygame.time.Clock()
         self.running = False
-        self.white_car = WhiteCar(full_width=True)
-        self.clock_last_update = pygame.time.get_ticks()
-        self.animation_cooldown = 200
+        self.white_car = WhiteCar(fill_width=True)
 
     def __set_running(self, running=False):
         self.running = running
@@ -76,10 +96,12 @@ class WildroseGame:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.__set_running(False)
+            # event types also handle white car's action
+            # self.white_car.set_action(action=ST_IDLE)
 
             # update animation
             self.__fill_background(WGColor.BLACK)
-            self.white_car.display(self.window)
+            self.white_car.display(self.window, )
             pygame.display.update()
             self.clock.tick(60)
         self.quit()
