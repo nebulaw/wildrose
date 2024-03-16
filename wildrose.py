@@ -1,10 +1,16 @@
-import pygame
+# Name: Wildrose
+# Created By: Karlo Tsutskiridze
+# Date: 03-17-2024
 
+import pygame as pg
+
+# TODO: create queue for actions
+#       support for intelligent queueing these actions
+#       and clearing it if necessary
 
 class WGColor:
     WHITE = (255, 255, 255)
     BLACK = (0, 0, 0)
-
 
 class WhiteCar():
     WIDTH = 32
@@ -20,11 +26,13 @@ class WhiteCar():
 
     def __init__(self, fill_width=False):
         self.frame = 0
-        self.current_time = pygame.time.get_ticks()
-        self.updated_time = pygame.time.get_ticks()
-        self.cooldown = 120
+        self.current_time = pg.time.get_ticks()
+        self.updated_time = pg.time.get_ticks()
+        self.cooldown = 111
         self.action = self.ST_IDLE
+        self.alive = True
         self.animation = []
+        # these loop creates surfaces for each action's frames
         for action in ["idle", "run", "rush", "damage", "die",]:
             # load image for the action
             image = self.__load_sprite(f"static/white-cat-{action}.png")
@@ -33,38 +41,40 @@ class WhiteCar():
             # actions actually store surfaces for each sprite
             action_frames = []
             for frame in range(frames):
-                surface = pygame.Surface((self.WIDTH, self.HEIGHT)).convert_alpha()
+                surface = pg.Surface((self.WIDTH, self.HEIGHT)).convert_alpha()
                 surface.blit(image, (0, 0), (0, (frame * self.HEIGHT), self.WIDTH, self.HEIGHT))
                 if fill_width:
-                    surface = pygame.transform.scale(surface, (400, 400))
+                    surface = pg.transform.scale(surface, (400, 400))
                 else:
-                    surface = pygame.transform.scale(surface, (self.WIDTH * self.SCALE, self.HEIGHT * self.SCALE))
+                    surface = pg.transform.scale(surface, (self.WIDTH * self.SCALE, self.HEIGHT * self.SCALE))
                 surface.set_colorkey(self.COLORKEY)
                 action_frames.append(surface)
             self.animation.append(action_frames)
         pass
 
     def __load_sprite(self, image):
-        return pygame.image.load(image).convert_alpha()
+        return pg.image.load(image).convert_alpha()
 
     def set_action(self, action=ST_IDLE):
         self.action = action
 
-    def toggle_rush(self, ):
-        if self.action == self.ST_RUSH:
-            self.action = self.ST_IDLE
-        else:
-            self.action = self.ST_RUSH
-
     def display(self, root_surface, action=ST_IDLE):
         if root_surface is None:
             return action
-        # here we should add position variables for the class
-        self.current_time = pygame.time.get_ticks()
-        if self.current_time - self.updated_time >= self.cooldown:
-            self.frame = (self.frame + 1) % len(self.animation[self.action])
-            self.updated_time = self.current_time
-        self.frame = 0 if self.frame >= len(self.animation[self.action]) else self.frame
+        # frame updates only if the white car is alive
+        if self.alive:
+            # if its time to update the frame
+            # cooldown is the time between rendering each frame
+            self.current_time = pg.time.get_ticks()
+            if self.current_time - self.updated_time >= self.cooldown:
+                self.frame = (self.frame + 1) % len(self.animation[self.action])
+                self.updated_time = self.current_time
+            # check if it exceeds actions' frames
+            if self.frame >= len(self.animation[self.action]):
+                self.frame = 0
+            # kill the car if its death animation's last frame
+            if self.action == self.ST_DIE and self.frame == len(self.animation[self.action]) - 1:
+                self.alive = False
         root_surface.blit(self.animation[self.action][self.frame], (0, 0))
 
 
@@ -73,40 +83,59 @@ class WildroseGame:
     HEIGHT = 400
 
     def __init__(self):
-        pygame.init()
-        self.window = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
-        pygame.display.set_caption("Wildrose")
-        self.clock = pygame.time.Clock()
+        pg.init()
+        # this is the main window
+        self.window = pg.display.set_mode((self.WIDTH, self.HEIGHT))
+        pg.display.set_caption("Wildrose")
+        self.clock = pg.time.Clock()
         self.running = False
+        # this is the character
         self.white_car = WhiteCar(fill_width=True)
+        self.mouse_down = False
 
     def __set_running(self, running=False):
         self.running = running
 
-    def quit(self, ):
-        pygame.quit()
+    def __quit(self, ):
+        pg.quit()
 
     def __fill_background(self, color):
         self.window.fill(color)
+
+    def __handle_events(self):
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                self.__set_running(False)
+            elif event.type == pg.MOUSEBUTTONDOWN:
+                self.mouse_down = True
+            elif event.type == pg.MOUSEBUTTONUP:
+                self.mouse_down = False
+                self.white_car.set_action(action=WhiteCar.ST_IDLE)
+            elif event.type == pg.MOUSEMOTION:
+                if self.mouse_down:
+                    self.white_car.set_action(action=WhiteCar.ST_DAMAGE)
+            elif event.type == pg.KEYDOWN:
+                if event.key == pg.K_q:
+                    self.__set_running(False)
+                elif event.key == pg.K_k:
+                    self.white_car.set_action(WhiteCar.ST_DIE)
+        pass
 
     def start(self):
         self.__set_running(True)
         while self.running:
             # handle events
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.__set_running(False)
-            # event types also handle white car's action
-            # self.white_car.set_action(action=ST_IDLE)
+            self.__handle_events()
 
-            # update animation
             self.__fill_background(WGColor.BLACK)
+
+            # display white car
             self.white_car.display(self.window, )
-            pygame.display.update()
+
+            pg.display.update()
             self.clock.tick(60)
-        self.quit()
+        self.__quit()
 
 
-wg = WildroseGame()
-wg.start()
+WildroseGame().start()
 
