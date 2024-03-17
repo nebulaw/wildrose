@@ -1,6 +1,12 @@
+# Name: Wildrose
+# Created By: Karlo Tsutskiridze
+# Date: 03-17-2024
+
 import pygame as pg
 
-
+"""
+animations are predefined atm
+"""
 ANIMATIONS = ["idle", "run", "rush", "damage", "die"]
 ST_IDLE, ST_RUN, ST_RUSH, ST_DAMAGE, ST_DIE = range(5)
 
