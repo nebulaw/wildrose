@@ -4,16 +4,7 @@
 
 import pygame as pg
 from characters import character
-
-
-# TODO: create queue for actions
-#       support for intelligent queueing these actions
-#       and clearing it if necessary
-
-class WGColor:
-    WHITE = (255, 255, 255)
-    BLACK = (0, 0, 0)
-
+import constants as c
 
 class WildroseGame:
     WIDTH = 400
@@ -21,14 +12,33 @@ class WildroseGame:
 
     def __init__(self):
         pg.init()
+        pg.display.set_caption("Wildrose")
+        # init mixer
+        pg.mixer.init()
+        pg.mixer.set_num_channels(8)
+        self.bg_music_playing = False
         # this is the main window
         self.window = pg.display.set_mode((self.WIDTH, self.HEIGHT))
-        pg.display.set_caption("Wildrose")
         self.clock = pg.time.Clock()
         self.running = False
         # this is the character
-        self.white_car = character.WhiteCar()
+        self.white_car = character.WhiteCar(root_surface=self.window, fill_width=True)
         self.mouse_down = False
+
+    def __play_background_music(self):
+        pg.mixer.music.load('static/faraon-harold-budd.wav')
+        pg.mixer.music.play(-1)
+        self.bg_music_playing = True
+
+    def __pause_background_music(self):
+        if self.bg_music_playing:
+            pg.mixer.music.pause()
+            self.bg_music_playing = False
+
+    def __unpause_background_music(self):
+        if not self.bg_music_playing:
+            pg.mixer.music.unpause()
+            self.bg_music_playing = True
 
     def __set_running(self, running=False):
         self.running = running
@@ -41,6 +51,7 @@ class WildroseGame:
 
     def __handle_events(self):
         for event in pg.event.get():
+            self.white_car.handle_event(event)
             if event.type == pg.QUIT:
                 self.__set_running(False)
             elif event.type == pg.MOUSEBUTTONDOWN:
@@ -56,23 +67,35 @@ class WildroseGame:
                     self.__set_running(False)
                 elif event.key == pg.K_k:
                     self.white_car.set_action(character.ST_DIE)
+                elif event.key == pg.K_RIGHT:
+                    self.white_car.set_action(character.ST_RUN)
+                elif event.key == pg.K_ESCAPE:
+                    if self.bg_music_playing:
+                        self.__pause_background_music()
+                    else:
+                        self.__unpause_background_music()
+            elif event.type == pg.KEYUP:
+                if event.key == pg.K_RIGHT:
+                    self.white_car.set_action(character.ST_IDLE)
         pass
 
     def start(self):
         self.__set_running(True)
+        self.__play_background_music()
         while self.running:
             # handle events
             self.__handle_events()
 
-            self.__fill_background(WGColor.BLACK)
+            self.__fill_background(c.Color.BLACK.value)
 
             # display white car
-            self.white_car.display(self.window, )
+            self.white_car.display()
 
             pg.display.update()
             self.clock.tick(60)
         self.__quit()
 
 
-WildroseGame().start()
+if __name__ == "__main__":
+    WildroseGame().start()
 

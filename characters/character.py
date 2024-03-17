@@ -4,12 +4,16 @@
 
 import pygame as pg
 
+
 """
 animations are predefined atm
 """
 ANIMATIONS = ["idle", "run", "rush", "damage", "die"]
 ST_IDLE, ST_RUN, ST_RUSH, ST_DAMAGE, ST_DIE = range(5)
 
+# TODO: create queue for actions
+#       support for intelligent queueing these actions
+#       and clearing it if necessary
 class Character:
     """Character class
 
@@ -18,7 +22,6 @@ class Character:
     actions
 
     """
-
     def __init__(self, name, root_surface=None, sprite_colorkey=(0, 0, 0), sprite_scale=1.0, sprite_w=32, sprite_h=32, sprite_orientation=1, fill_width=False, frame_cooldown=120):
         """Initialize method for a character
 
@@ -43,14 +46,13 @@ class Character:
             The height value for sprites (Default is 32)
         sprite_orientation: int, optional
             This specifies whether a spritesheet would be vertically
-            or horizontally iterated. 1 is for horizontal and 0 is for
-            vertical (Default is 1)
+            or horizontally iterated. 1 is for horizontal and 0 is for vertical (Default is 1)
         fill_width: bool, optional
-            Use the root surface's width. Simply fills the root surface
-            (Default is False)
+            Use the root surface's width. Simply fills the root surface (Default is False)
         frame_cooldown: int, optional
             The time in milliseconds between each frame (Default is 120)
         """
+        self.name = name
         self.root_surface = root_surface
         self.sprite_w = sprite_w
         self.sprite_h = sprite_h
@@ -84,22 +86,57 @@ class Character:
                 surface.set_colorkey(sprite_colorkey)
                 action_frames.append(surface)
             self.animation.append(action_frames)
+        # TODO: this is a queue for actions?
+        # self.actions = []
         pass
 
     def __load_sprite(self, image):
         return pg.image.load(image).convert_alpha()
 
     def set_action(self, action=ST_IDLE):
+        """Set character's action
+        Parameters
+        ----------
+        action: int, optional
+            Action represented by an integer
+        """
         if self.alive:
             self.action = action
         if action == ST_DIE:
             self.frame = 0
+        self.sound()
 
     def register_root_surface(self, root_surface):
+        """Modify the surface of the character to be displayed on
+
+        This function is should called when root surface wasn't
+        specified while creating a character object
+
+        Parameters
+        ----------
+        root_surface: Surface
+            The surface the character to be shown on
+        """
         if root_surface is not None:
             self.root_surface = root_surface
 
-    def display(self, root_surface):
+    def handle_event(self, event):
+        raise NotImplementedError("Handle event method is not implemented")
+
+    def sound(self):
+        raise NotImplementedError("Sound method is not implemented")
+
+    def display(self, ):
+        """Display the character
+
+        Raises
+        -----
+        ValueError:
+            This exception raises when root surface was not
+            provided for the character
+        """
+        if self.root_surface is None:
+            raise ValueError(f"Root surface for {self.name} was not specified.")
         if self.alive:
             # if its time to update the frame
             # cooldown is the time between rendering each frame
@@ -113,13 +150,73 @@ class Character:
             # kill the car if its death animation's last frame
             if self.action == ST_DIE and self.frame == len(self.animation[self.action]) - 1:
                 self.alive = False
-            root_surface.blit(self.animation[self.action][self.frame], (0, 0))
+            self.root_surface.blit(self.animation[self.action][self.frame], (0, 0))
         else:
-            root_surface.blit(self.animation[ST_DIE][-1], (0, 0))
+            self.root_surface.blit(self.animation[ST_DIE][-1], (0, 0))
 
 
 class WhiteCar(Character):
-    def __init__(self, ):
-        super().__init__(name="white-cat", sprite_orientation=1, sprite_scale=3.0, fill_width=True)
+    """Sample character class"""
+    def __init__(self, sprite_orientation=1, sprite_scale=1.0, fill_width=True, *args, **kwargs):
+        super().__init__(name="white-cat", *args, sprite_orientation=sprite_orientation, sprite_scale=sprite_scale, fill_width=fill_width, **kwargs)
+        self.sound_channel = pg.mixer.Channel(4)
+        self.sound_purring = pg.mixer.Sound("static/purring-1.ogg")
+        self.sound_meow = pg.mixer.Sound("static/meow.wav")
+        self.purring = False
+        self.meowing = False
+        self.mouse_down = False
+        self.patting = False
 
+    def meow(self):
+        if self.meowing:
+            return
+        if self.purring:
+            self.sound_channel.stop()
+            self.purring = False
+        if not self.sound_channel.get_busy():
+            self.sound_channel.play(self.sound_meow)
+            self.meowing = True
+
+    def stop_meow(self):
+        if self.meowing and self.sound_channel.get_busy():
+            self.sound_channel.stop()
+            self.meowing = False
+
+    def purr(self):
+        if self.purring:
+            return
+        if self.meowing:
+            self.sound_channel.stop()
+            self.meowing = False
+        if not self.sound_channel.get_busy():
+            self.sound_channel.play(self.sound_purring)
+            self.purring = True
+
+    def stop_purr(self):
+        if self.purring and self.sound_channel.get_busy():
+            self.sound_channel.stop()
+            self.purring = False
+
+    def set_action(self, action=ST_IDLE):
+        """Set character's action
+        Parameters
+        ----------
+        action: int, optional
+            Action represented by an integer
+        """
+        if self.alive:
+            self.action = action
+        if action == ST_DIE:
+            self.frame = 0
+            self.meow()
+        if action == ST_DAMAGE:
+            self.purr()
+
+    def handle_event(self, event):
+        if event.type == pg.MOUSEBUTTONDOWN:
+            self.mouse_down = True
+            self.purr()
+        if event.type == pg.MOUSEBUTTONUP:
+            self.mouse_down = False
+            self.stop_purr()
 
