@@ -57,10 +57,12 @@ class WhiteCar():
 
     def set_action(self, action=ST_IDLE):
         self.action = action
+        # if new action is death resetting the frame
+        # makes the animation load
+        if action == self.ST_DIE:
+            self.frame = 0
 
-    def display(self, root_surface, action=ST_IDLE):
-        if root_surface is None:
-            return action
+    def display(self, root_surface):
         # frame updates only if the white car is alive
         if self.alive:
             # if its time to update the frame
@@ -75,7 +77,9 @@ class WhiteCar():
             # kill the car if its death animation's last frame
             if self.action == self.ST_DIE and self.frame == len(self.animation[self.action]) - 1:
                 self.alive = False
-        root_surface.blit(self.animation[self.action][self.frame], (0, 0))
+            root_surface.blit(self.animation[self.action][self.frame], (0, 0))
+        else:
+            root_surface.blit(self.animation[self.ST_DIE][-1], (0, 0))
 
 
 class WildroseGame:
