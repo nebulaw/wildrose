@@ -25,20 +25,18 @@ class WildroseGame:
         self.white_car = character.WhiteCar(root_surface=self.window, fill_width=True)
         self.mouse_down = False
 
+    def __toggle_background_music(self):
+        if self.bg_music_playing:
+            pg.mixer.music.pause()
+            self.bg_music_playing = False
+        else:
+            pg.mixer.music.unpause()
+            self.bg_music_playing = True
+
     def __play_background_music(self):
         pg.mixer.music.load('static/faraon-harold-budd.wav')
         pg.mixer.music.play(-1)
         self.bg_music_playing = True
-
-    def __pause_background_music(self):
-        if self.bg_music_playing:
-            pg.mixer.music.pause()
-            self.bg_music_playing = False
-
-    def __unpause_background_music(self):
-        if not self.bg_music_playing:
-            pg.mixer.music.unpause()
-            self.bg_music_playing = True
 
     def __set_running(self, running=False):
         self.running = running
@@ -58,25 +56,14 @@ class WildroseGame:
                 self.mouse_down = True
             elif event.type == pg.MOUSEBUTTONUP:
                 self.mouse_down = False
-                self.white_car.set_action(action=character.ST_IDLE)
             elif event.type == pg.MOUSEMOTION:
                 if self.mouse_down:
                     self.white_car.set_action(action=character.ST_DAMAGE)
             elif event.type == pg.KEYDOWN:
                 if event.key == pg.K_q:
                     self.__set_running(False)
-                elif event.key == pg.K_k:
-                    self.white_car.set_action(character.ST_DIE)
-                elif event.key == pg.K_RIGHT:
-                    self.white_car.set_action(character.ST_RUN)
                 elif event.key == pg.K_ESCAPE:
-                    if self.bg_music_playing:
-                        self.__pause_background_music()
-                    else:
-                        self.__unpause_background_music()
-            elif event.type == pg.KEYUP:
-                if event.key == pg.K_RIGHT:
-                    self.white_car.set_action(character.ST_IDLE)
+                    self.__toggle_background_music()
         pass
 
     def start(self):

@@ -213,10 +213,28 @@ class WhiteCar(Character):
             self.purr()
 
     def handle_event(self, event):
+        # sound clean up
+        if not self.sound_channel.get_busy():
+            self.meowing = False
+            self.purring = False
+
         if event.type == pg.MOUSEBUTTONDOWN:
             self.mouse_down = True
             self.purr()
-        if event.type == pg.MOUSEBUTTONUP:
+        elif event.type == pg.MOUSEBUTTONUP:
             self.mouse_down = False
             self.stop_purr()
+            self.set_action(ST_IDLE)
+        elif event.type == pg.MOUSEMOTION:
+            if self.mouse_down:
+                self.purr()
+        elif event.type == pg.KEYDOWN:
+            if event.key == pg.K_k:
+                self.set_action(ST_DIE)
+            elif event.key == pg.K_RIGHT:
+                self.set_action(ST_RUSH)
+        elif event.type == pg.KEYUP:
+            if event.key == pg.K_RIGHT:
+                self.set_action(ST_IDLE)
+        pass
 
