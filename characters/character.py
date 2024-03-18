@@ -159,7 +159,7 @@ class WhiteCar(Character):
     """Sample character class"""
     def __init__(self, sprite_orientation=1, sprite_scale=1.0, fill_width=True, *args, **kwargs):
         super().__init__(name="white-cat", *args, sprite_orientation=sprite_orientation, sprite_scale=sprite_scale, fill_width=fill_width, **kwargs)
-        self.sound_channel = pg.mixer.Channel(4)
+        self.sound_channel = pg.mixer.Channel(2)
         self.sound_purring = pg.mixer.Sound("static/purring-1.ogg")
         self.sound_meow = pg.mixer.Sound("static/meow.wav")
         self.purring = False
@@ -178,9 +178,9 @@ class WhiteCar(Character):
             self.meowing = True
 
     def stop_meow(self):
-        if self.meowing and self.sound_channel.get_busy():
+        self.meowing = False
+        if self.sound_channel.get_busy():
             self.sound_channel.stop()
-            self.meowing = False
 
     def purr(self):
         if self.purring:
@@ -197,6 +197,7 @@ class WhiteCar(Character):
             self.sound_channel.stop()
             self.purring = False
 
+    # TODO: implement sound method
     def set_action(self, action=ST_IDLE):
         """Set character's action
         Parameters
@@ -206,21 +207,18 @@ class WhiteCar(Character):
         """
         if self.alive:
             self.action = action
-        if action == ST_DIE:
-            self.frame = 0
-            self.meow()
-        if action == ST_DAMAGE:
-            self.purr()
+            if action == ST_DIE:
+                self.frame = 0
+                self.alive = False
+            elif action == ST_DAMAGE:
+                self.purr()
 
     def handle_event(self, event):
-        # sound clean up
-        if not self.sound_channel.get_busy():
-            self.meowing = False
-            self.purring = False
-
+        if not self.alive:
+            return
         if event.type == pg.MOUSEBUTTONDOWN:
             self.mouse_down = True
-            self.purr()
+            # self.purr()
         elif event.type == pg.MOUSEBUTTONUP:
             self.mouse_down = False
             self.stop_purr()
@@ -230,11 +228,14 @@ class WhiteCar(Character):
                 self.purr()
         elif event.type == pg.KEYDOWN:
             if event.key == pg.K_k:
+                self.meow()
                 self.set_action(ST_DIE)
             elif event.key == pg.K_RIGHT:
                 self.set_action(ST_RUSH)
         elif event.type == pg.KEYUP:
             if event.key == pg.K_RIGHT:
                 self.set_action(ST_IDLE)
-        pass
+            elif event.key == pg.K_k:
+                self.stop_meow()
+        # print(f"Cat='meow={self.meowing}','purr={self.purring}','channel={self.sound_channel.get_busy()}'")
 

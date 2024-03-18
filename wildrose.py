@@ -6,6 +6,24 @@ import pygame as pg
 from characters import character
 import constants as c
 
+class WildroseMixer:
+    def __init__(self, bg_music=None):
+        pg.mixer.init()
+        pg.mixer.set_num_channels(4)
+        self.__bg_music_channel = pg.mixer.Channel(1)
+        self.__bg_music = pg.mixer.Sound("static/faraon-harold-budd.wav" if bg_music is None else bg_music)
+
+    def __load_music(self, music):
+        pg.mixer.music.load(music)
+
+    def toggle_background_music(self):
+        if self.__bg_music_channel.get_busy(): self.__bg_music_channel.pause()
+        else: self.__bg_music_channel.unpause()
+
+    def play_background_music(self, loops=1):
+        self.__bg_music_channel.play(self.__bg_music, loops=loops, fade_ms=2000)
+
+
 class WildroseGame:
     WIDTH = 400
     HEIGHT = 400
@@ -14,9 +32,7 @@ class WildroseGame:
         pg.init()
         pg.display.set_caption("Wildrose")
         # init mixer
-        pg.mixer.init()
-        pg.mixer.set_num_channels(8)
-        self.bg_music_playing = False
+        self.mixer = WildroseMixer(bg_music="static/faraon-harold-budd.wav")
         # this is the main window
         self.window = pg.display.set_mode((self.WIDTH, self.HEIGHT))
         self.clock = pg.time.Clock()
@@ -25,18 +41,8 @@ class WildroseGame:
         self.white_car = character.WhiteCar(root_surface=self.window, fill_width=True)
         self.mouse_down = False
 
-    def __toggle_background_music(self):
-        if self.bg_music_playing:
-            pg.mixer.music.pause()
-            self.bg_music_playing = False
-        else:
-            pg.mixer.music.unpause()
-            self.bg_music_playing = True
-
-    def __play_background_music(self):
-        pg.mixer.music.load('static/faraon-harold-budd.wav')
-        pg.mixer.music.play(-1)
-        self.bg_music_playing = True
+    def __start_mixer(self):
+        self.mixer.play_background_music(loops=-1)
 
     def __set_running(self, running=False):
         self.running = running
@@ -63,12 +69,12 @@ class WildroseGame:
                 if event.key == pg.K_q:
                     self.__set_running(False)
                 elif event.key == pg.K_ESCAPE:
-                    self.__toggle_background_music()
+                    self.mixer.toggle_background_music()
         pass
 
     def start(self):
         self.__set_running(True)
-        self.__play_background_music()
+        self.__start_mixer()
         while self.running:
             # handle events
             self.__handle_events()
