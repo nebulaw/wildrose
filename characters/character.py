@@ -163,34 +163,23 @@ class WhiteCar(Character):
         self.sound_purring = pg.mixer.Sound("static/purring-1.ogg")
         self.sound_meow = pg.mixer.Sound("static/meow.wav")
         self.purring = False
-        self.meowing = False
+        self.meowing = False    # meowing is not implemented yet
         self.mouse_down = False
         self.patting = False
 
     def meow(self):
-        if self.meowing:
-            return
-        if self.purring:
-            self.sound_channel.stop()
-            self.purring = False
-        if not self.sound_channel.get_busy():
-            self.sound_channel.play(self.sound_meow)
-            self.meowing = True
-
-    def stop_meow(self):
-        self.meowing = False
         if self.sound_channel.get_busy():
             self.sound_channel.stop()
+        self.sound_channel.play(self.sound_meow)
+        self.purring = False    # stop purring if it was purring
 
     def purr(self):
         if self.purring:
             return
-        if self.meowing:
+        if self.sound_channel.get_busy():
             self.sound_channel.stop()
-            self.meowing = False
-        if not self.sound_channel.get_busy():
-            self.sound_channel.play(self.sound_purring)
-            self.purring = True
+        self.sound_channel.play(self.sound_purring, loops=-1)
+        self.purring = True     # start purring
 
     def stop_purr(self):
         if self.purring and self.sound_channel.get_busy():
@@ -209,9 +198,9 @@ class WhiteCar(Character):
             self.action = action
             if action == ST_DIE:
                 self.frame = 0
-                self.alive = False
-            elif action == ST_DAMAGE:
-                self.purr()
+                # self.alive = False
+            # elif action == ST_DAMAGE:
+            #     self.purr()
 
     def handle_event(self, event):
         if not self.alive:
@@ -230,12 +219,12 @@ class WhiteCar(Character):
             if event.key == pg.K_k:
                 self.meow()
                 self.set_action(ST_DIE)
+            elif event.key == pg.K_m:
+                self.meow()
             elif event.key == pg.K_RIGHT:
                 self.set_action(ST_RUSH)
         elif event.type == pg.KEYUP:
             if event.key == pg.K_RIGHT:
                 self.set_action(ST_IDLE)
-            elif event.key == pg.K_k:
-                self.stop_meow()
         # print(f"Cat='meow={self.meowing}','purr={self.purring}','channel={self.sound_channel.get_busy()}'")
 
