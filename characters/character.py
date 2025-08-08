@@ -80,7 +80,12 @@ class Character:
                 area_h = 0 if sprite_orientation == 0 else (sprite_h * frame)
                 surface.blit(sprite, (0, 0), (area_w, area_h, sprite_w, sprite_h))
                 if fill_width:
-                    surface = pg.transform.scale(surface, (400, 400))
+                    # Scale proportionally to fit in upper portion (maintain aspect ratio)
+                    target_height = 400  # Increased max height for character area
+                    original_ratio = sprite_w / sprite_h
+                    new_height = min(target_height, 400)
+                    new_width = int(new_height * original_ratio)
+                    surface = pg.transform.scale(surface, (new_width, new_height))
                 else:
                     surface = pg.transform.scale(surface, (sprite_w * sprite_scale, sprite_h * sprite_scale))
                 surface.set_colorkey(sprite_colorkey)
@@ -150,9 +155,20 @@ class Character:
             # kill the car if its death animation's last frame
             if self.action == ST_DIE and self.frame == len(self.animation[self.action]) - 1:
                 self.alive = False
-            self.root_surface.blit(self.animation[self.action][self.frame], (0, 0))
+            # Center the character in the upper portion
+            char_surface = self.animation[self.action][self.frame]
+            x = (self.root_surface.get_width() - char_surface.get_width()) // 2
+            # Center vertically in the available space (excluding chat area)
+            available_height = self.root_surface.get_height() - 150  # Chat takes 150px
+            y = (available_height - char_surface.get_height()) // 2 + 20  # Small top margin
+            self.root_surface.blit(char_surface, (x, y))
         else:
-            self.root_surface.blit(self.animation[ST_DIE][-1], (0, 0))
+            # Center dead character too
+            char_surface = self.animation[ST_DIE][-1]
+            x = (self.root_surface.get_width() - char_surface.get_width()) // 2
+            available_height = self.root_surface.get_height() - 150
+            y = (available_height - char_surface.get_height()) // 2 + 20
+            self.root_surface.blit(char_surface, (x, y))
 
 
 class WhiteCar(Character):
