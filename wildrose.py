@@ -3,7 +3,7 @@
 # Date: 03-17-2024
 
 import pygame as pg
-from characters import character
+import characters as chr
 import constants as c
 
 class WildroseMixer:
@@ -34,7 +34,7 @@ class WildroseGame:
         pg.event.set_allowed([pg.QUIT, pg.KEYDOWN, pg.KEYUP, pg.MOUSEBUTTONDOWN, pg.MOUSEBUTTONUP, pg.MOUSEMOTION])
         self.running = False
         # this is the character
-        self.white_car = character.WhiteCar(root_surface=self.window, sprite_scale=16.0, fill_width=False)
+        self.white_car = chr.WhiteCar(root_surface=self.window, sprite_scale=16.0, fill_width=False)
         self.mouse_down = False
     def _start_mixer(self): self.mixer.play_background_music(loops=-1)
     def _set_running(self, running=False): self.running = running

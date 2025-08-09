@@ -1,5 +1,9 @@
+from typing import List
 import pygame as pg
+
 from .sprite import CharacterSprite
+from brain import Brain
+from brain.tool import Tool
 
 # animations are predefined atm
 ANIMATIONS = ["idle", "run", "rush", "damage", "die"]
@@ -7,10 +11,13 @@ ST_IDLE, ST_RUN, ST_RUSH, ST_DAMAGE, ST_DIE = range(5)
 
 class Character:
     """Character owns behavior and sound; sprite is delegated to CharacterSprite."""
-    def __init__(self, name: str, sprite: CharacterSprite, root_surface=None):
+    def __init__(self, name:str, config:str = "", sprite:CharacterSprite=None, root_surface=None):
         self.name, self.sprite = name, sprite
         self.root_surface = root_surface
         self.action, self.alive = ST_IDLE, True
+        self.tools = self._init_tools()
+        self.brain = Brain(self, config=config, tools=self.tools)
+    def _init_tools(self) -> List[Tool]: return []
     def set_action(self, action=ST_IDLE):
         if self.alive:
             self.action = action
@@ -31,16 +38,16 @@ class Character:
 
 class WhiteCar(Character):
     """Sample character class"""
-    def __init__(self, sprite_orientation=1, sprite_scale=1.0, fill_width=True, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         spr = CharacterSprite(
             name="white-cat",
             actions=ANIMATIONS,
             sprite_w=32,
             sprite_h=32,
-            sprite_scale=sprite_scale,
+            sprite_scale=16.0,
             sprite_colorkey=(0, 0, 0),
-            sprite_orientation=sprite_orientation,
-            fill_width=fill_width,
+            sprite_orientation=1,
+            fill_width=True,
             frame_cooldown=120,
         )
         super().__init__(name="white-cat", sprite=spr, *args, **kwargs)

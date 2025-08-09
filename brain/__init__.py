@@ -1,9 +1,3 @@
-from typing import List
+from .brain import Brain
 
-from .context import ContextManager
-from .tool import Tool
-
-class Brain:
-    def __init__(self, consciousness: str, tools: List[Tool]):
-        self.tools = tools
-        self.ctx_manager = ContextManager(consciousness, self.tools)
+_all__ = ["Brain"]
