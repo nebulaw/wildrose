@@ -81,11 +81,6 @@ body, html {
     image-rendering: pixelated;
     background-repeat: no-repeat;
     background-position: left top;
-    transition: transform 0.2s;
-}
-
-#game-area:hover #cat-sprite {
-    transform: scale(10.5);
 }
 
 /* Animations */
