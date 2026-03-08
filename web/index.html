@@ -8,26 +8,25 @@
 </head>
 <body>
     <div id="app">
-        <!-- Sidebar Chat (The Creative Independent Style) -->
-        <aside id="chat-sidebar">
+        <!-- Main Game Area (Background) -->
+        <main id="game-area">
+            <div id="cat-sprite" class="cat-idle"></div>
+        </main>
+
+        <!-- Centered Chat Overlay -->
+        <aside id="chat-overlay">
             <div id="chat-history">
                 <!-- Messages will be injected here -->
             </div>
             <div id="typing-indicator" class="hidden">Eve is typing...</div>
             <div id="chat-input-container">
-                <textarea id="chat-input" placeholder="Click here or press 'T' to reply..." rows="1"></textarea>
+                <textarea id="chat-input" placeholder="Talk to Eve... (Press Enter to send)" rows="1"></textarea>
             </div>
         </aside>
-
-        <!-- Main Game Area -->
-        <main id="game-area">
-            <!-- The pixel cat sprite will be animated using CSS -->
-            <div id="cat-sprite" class="cat-idle"></div>
-            
-            <div class="audio-controls">
-                <button id="toggle-music">🔊 Play Music</button>
-            </div>
-        </main>
+        
+        <div class="audio-controls">
+            <button id="toggle-music">🔊 Play Music</button>
+        </div>
     </div>
 
     <!-- Audio assets -->
