@@ -3,18 +3,18 @@
 # Date: 03-17-2024
 
 import pygame as pg
-from characters import character
+import characters as chr
 import constants as c
 
 MIXER_AVAILABLE = False
+mixer = None
 try:
     from pygame import mixer
 
     mixer.init()
     MIXER_AVAILABLE = True
 except (ImportError, NotImplementedError, AttributeError):
-    mixer = None
-
+    pass
 
 class WildroseMixer:
     def __init__(self, bg_music=None):
@@ -43,18 +43,17 @@ class WildroseMixer:
             return
         self._bg_music_channel.play(self._bg_music, loops=loops, fade_ms=2000)
 
-
 class WildroseGame:
-    WIDTH = 400
-    HEIGHT = 400
+    WIDTH = 800
+    HEIGHT = 450
 
     def __init__(self):
         pg.init()
         pg.display.set_caption("Wildrose")
         # init mixer
         self.mixer = WildroseMixer(bg_music="static/faraon-harold-budd.wav")
-        # this is the main window
-        self.window = pg.display.set_mode((self.WIDTH, self.HEIGHT))
+        # this is the main window, fully resizable!
+        self.window = pg.display.set_mode((self.WIDTH, self.HEIGHT), pg.RESIZABLE)
         self.clock = pg.time.Clock()
         # Performance optimization
         pg.event.set_allowed(
@@ -65,11 +64,12 @@ class WildroseGame:
                 pg.MOUSEBUTTONDOWN,
                 pg.MOUSEBUTTONUP,
                 pg.MOUSEMOTION,
+                pg.VIDEORESIZE,
             ]
         )
         self.running = False
         # this is the character
-        self.white_car = character.WhiteCar(
+        self.white_car = chr.WhiteCar(
             root_surface=self.window, sprite_scale=16.0, fill_width=False
         )
         self.mouse_down = False
@@ -109,12 +109,14 @@ class WildroseGame:
                     self.mouse_down = False
                 elif event.type == pg.MOUSEMOTION:
                     if self.mouse_down:
-                        self.white_car.set_action(action=character.ST_DAMAGE)
+                        self.white_car.set_action(action=chr.ST_DAMAGE)
                 elif event.type == pg.KEYDOWN:
                     if event.key == pg.K_q:
                         self._set_running(False)
                     elif event.key == pg.K_ESCAPE:
                         self.mixer.toggle_background_music()
+                elif event.type == pg.VIDEORESIZE:
+                    self.WIDTH, self.HEIGHT = event.w, event.h
 
     def start(self):
         self._set_running(True)
@@ -127,16 +129,30 @@ class WildroseGame:
             self.brain.update()
 
             self._fill_background(c.Color.BLACK.value)
-            # display white car
-            self.white_car.display()
+            
+            w, h = self.window.get_size()
+            
+            # Responsive UI layout - The Creative Independent style left-sidebar
+            # We enforce a minimum and maximum chat width
+            chat_w = max(250, min(400, w // 3))
+            
+            # Create a subsurface for the right side (where the car lives)
+            # The sprite's draw_centered method magically centers within this sub-surface
+            if w > chat_w:
+                game_rect = pg.Rect(chat_w, 0, w - chat_w, h)
+                try:
+                    game_surface = self.window.subsurface(game_rect)
+                    self.white_car.root_surface = game_surface
+                    self.white_car.display()
+                except ValueError:
+                    pass
 
-            # draw chat ui
-            self.chat_ui.draw()
+            # Draw chat ui on the left
+            self.chat_ui.draw(pg.Rect(0, 0, chat_w, h))
 
             pg.display.update()
             self.clock.tick(60)
         self._quit()
-
 
 if __name__ == "__main__":
     WildroseGame().start()
