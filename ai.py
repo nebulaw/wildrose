@@ -76,6 +76,22 @@ class LLMBrain:
         self.gemini_api_key = os.getenv("GEMINI_API_KEY", "")
         self.is_thinking = False
 
+        # Initial greeting and status
+        if self.chat:
+            self.chat.add_message(
+                f"[System]: AI initialized using provider '{self.provider}'"
+            )
+            if self.provider == "gemini" and not self.gemini_api_key:
+                self.chat.add_message("[System Warning]: GEMINI_API_KEY is empty!")
+            elif self.provider == "ollama":
+                model = os.getenv("OLLAMA_MODEL", "mistral:7b")
+                self.chat.add_message(f"[System]: Ollama model set to '{model}'")
+
+        # Trigger an immediate first interaction
+        self._make_llm_decision(
+            "The user just opened the application. Greet them happily in one short sentence!"
+        )
+
     def _init_tools(self) -> Dict[str, Tool]:
         return {
             "move_right": Tool(
@@ -178,10 +194,11 @@ You can move around, make sounds, and chat with the user. Be playful and cat-lik
             self.is_thinking = False
 
     def _call_ollama(self, prompt, system_prompt):
+        model = os.getenv("OLLAMA_MODEL", "mistral:7b")
         response = requests.post(
             "http://localhost:11434/api/chat",
             json={
-                "model": os.getenv("OLLAMA_MODEL", "mistral:7b"),
+                "model": model,
                 "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": prompt},
@@ -204,6 +221,10 @@ You can move around, make sounds, and chat with the user. Be playful and cat-lik
                 if "tool_calls" in msg:
                     for tool_call in msg["tool_calls"]:
                         self._execute_tool_call(tool_call)
+        elif response.status_code == 404:
+            raise Exception(
+                f"Ollama Model '{model}' not found (404). Please run 'ollama pull {model}'."
+            )
         else:
             raise Exception(f"Ollama API returned {response.status_code}")
 
@@ -212,12 +233,12 @@ You can move around, make sounds, and chat with the user. Be playful and cat-lik
             raise Exception("GEMINI_API_KEY missing from .env")
 
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={self.gemini_api_key}"
-        payload = {
-            "system_instruction": {"parts": {"text": system_prompt}},
+        payload: Dict[str, Any] = {
+            "systemInstruction": {"parts": [{"text": system_prompt}]},
             "contents": [{"role": "user", "parts": [{"text": prompt}]}],
             "tools": [
                 {
-                    "function_declarations": [
+                    "functionDeclarations": [
                         tool.to_gemini_schema() for tool in self.tools.values()
                     ]
                 }
