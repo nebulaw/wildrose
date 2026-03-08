@@ -130,17 +130,44 @@ class LLMBrain:
         tool_node = ToolNode(self.tools)
 
         def call_model(state: State):
-            # Truncate context if it gets too long
             messages = state["messages"]
-            if len(messages) > 20:
-                # Remove the oldest messages (keep System prompt at 0)
-                # Return RemoveMessage objects for everything up to the last 10 messages
-                to_remove = [RemoveMessage(id=m.id) for m in messages[1:-10]]
-                return {
-                    "messages": to_remove + [model_with_tools.invoke(messages[-10:])]
-                }
 
-            return {"messages": [model_with_tools.invoke(messages)]}
+            # 1. Dynamic system prompt injected at runtime (always fresh memory)
+            sys_msg = SystemMessage(content=self._get_context())
+
+            # 2. Strip ALL existing SystemMessages from state (cleaning up old migrations)
+            to_remove = [
+                RemoveMessage(id=m.id)
+                for m in messages
+                if getattr(m, "type", "") == "system"
+            ]
+            clean_messages = [m for m in messages if getattr(m, "type", "") != "system"]
+
+            # 3. Truncate context if it gets too long
+            if len(clean_messages) > 15:
+                keep_from = len(clean_messages) - 10
+
+                # Ensure we start the context window on a HumanMessage to prevent breaking role order/tool pairs
+                while (
+                    keep_from < len(clean_messages)
+                    and getattr(clean_messages[keep_from], "type", "") != "human"
+                ):
+                    keep_from += 1
+
+                if keep_from == len(clean_messages):
+                    keep_from = len(clean_messages) - 2
+
+                # Add truncated old messages to the removal list
+                to_remove.extend(
+                    [RemoveMessage(id=m.id) for m in clean_messages[:keep_from]]
+                )
+                clean_messages = clean_messages[keep_from:]
+
+            # 4. Invoke LLM with SystemPrompt + Cleaned History
+            invoke_msgs = [sys_msg] + clean_messages
+            response = model_with_tools.invoke(invoke_msgs)
+
+            return {"messages": to_remove + [response]}
 
         def should_continue(state: State):
             last_message = state["messages"][-1]
@@ -236,36 +263,17 @@ Guidelines:
         self.is_thinking = True
 
         prompt = context or "*You are feeling bored. What do you do?*"
-        system_prompt = self._get_context()
 
         if self.chat:
             self.chat.add_message("Eve is typing...", "system")
 
-        threading.Thread(
-            target=self._llm_worker, args=(prompt, system_prompt), daemon=True
-        ).start()
+        threading.Thread(target=self._llm_worker, args=(prompt,), daemon=True).start()
 
-    def _llm_worker(self, prompt: str, system_prompt: str):
+    def _llm_worker(self, prompt: str):
         try:
-            state = self.graph.get_state(self.config)
-
-            inputs = None
-            if not state.values or not state.values.get("messages"):
-                # First run
-                inputs = {
-                    "messages": [
-                        SystemMessage(content=system_prompt, id="eve_system_prompt"),
-                        HumanMessage(content=prompt),
-                    ]
-                }
-            else:
-                # Update system prompt dynamically if needed by overriding the existing ID
-                inputs = {
-                    "messages": [
-                        SystemMessage(content=system_prompt, id="eve_system_prompt"),
-                        HumanMessage(content=prompt),
-                    ]
-                }
+            # We ONLY send the HumanMessage.
+            # The system prompt is dynamically injected by the call_model node.
+            inputs = {"messages": [HumanMessage(content=prompt)]}
 
             res = self.graph.invoke(inputs, self.config)
 
