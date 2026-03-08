@@ -54,6 +54,8 @@ class LLMBrain:
         self.thread_id = "wildrose_user"
         self.config = {"configurable": {"thread_id": self.thread_id}}
 
+        self.seen_message_ids = set()
+
         # Message queue to never drop user inputs if AI is currently thinking
         self.message_queue = []
 
@@ -265,7 +267,7 @@ Guidelines:
         prompt = context or "*You are feeling bored. What do you do?*"
 
         if self.chat:
-            self.chat.add_message("Eve is typing...", "system")
+            self.chat.set_typing(True)
 
         threading.Thread(target=self._llm_worker, args=(prompt,), daemon=True).start()
 
@@ -278,24 +280,27 @@ Guidelines:
             res = self.graph.invoke(inputs, self.config)
 
             if self.chat:
-                self.chat.remove_last_message()
+                self.chat.set_typing(False)
 
-            # The graph response includes ALL messages in state.
-            # Find the new messages. A simplistic approach is looking at the last message.
-            last_msg = res["messages"][-1]
-            if isinstance(last_msg, AIMessage) and last_msg.content:
-                if self.chat:
-                    self.chat.add_message(f"{last_msg.content}", "eve")
-            elif isinstance(last_msg, ToolMessage):
-                # We could log tool usage silently
-                pass
+            # Extract ALL new messages that we haven't seen before
+            for msg in res["messages"]:
+                if msg.id not in self.seen_message_ids:
+                    self.seen_message_ids.add(msg.id)
+                    if isinstance(msg, AIMessage) and msg.content:
+                        if self.chat:
+                            self.chat.add_message(f"{msg.content}", "eve")
+                    elif isinstance(msg, ToolMessage):
+                        # Tool execution results
+                        pass
 
         except Exception as e:
             if self.chat:
-                self.chat.remove_last_message()
+                self.chat.set_typing(False)
                 self.chat.add_message(f"LLM Error: {str(e)[:100]}...", "error")
             self._idle()
         finally:
+            if self.chat:
+                self.chat.set_typing(False)
             self.is_thinking = False
             self.last_decision = time.time()
 
