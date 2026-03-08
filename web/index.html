@@ -8,13 +8,18 @@
 </head>
 <body>
     <div id="app">
-        <!-- Main Game Area (Background) -->
+        <!-- Header Panel (Top Bento) -->
+        <header id="top-panel">
+            <button id="toggle-music">🔊 Play Music</button>
+        </header>
+
+        <!-- Main Game Area (Center Bento) -->
         <main id="game-area">
             <div id="cat-sprite" class="cat-idle"></div>
         </main>
 
-        <!-- Centered Chat Overlay -->
-        <aside id="chat-overlay">
+        <!-- Chat Panel (Bottom Bento) -->
+        <footer id="bottom-panel">
             <div id="chat-history">
                 <!-- Messages will be injected here -->
             </div>
@@ -22,11 +27,7 @@
             <div id="chat-input-container">
                 <textarea id="chat-input" placeholder="Talk to Eve... (Press Enter to send)" rows="1"></textarea>
             </div>
-        </aside>
-        
-        <div class="audio-controls">
-            <button id="toggle-music">🔊 Play Music</button>
-        </div>
+        </footer>
     </div>
 
     <!-- Audio assets -->

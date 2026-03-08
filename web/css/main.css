@@ -7,154 +7,149 @@
 body, html {
     width: 100%;
     height: 100%;
+    /* TCI Typography */
     font-family: Courier, "Courier New", monospace;
     font-size: 16px;
-    background-color: #0d0d0d;
-    color: #eaeaea;
+    background-color: #fff;
+    color: #111;
     overflow: hidden;
 }
 
+/* Bento Grid Container */
 #app {
-    position: relative;
+    display: grid;
     width: 100%;
     height: 100%;
+    /* 
+       TCI-style Bento:
+       Rows: Header (Controls), Main Game (flex), Footer Chat 
+    */
+    grid-template-rows: max-content 1fr minmax(200px, 40%);
+    grid-template-columns: 1fr;
+    gap: 1px; /* The "lines" of the bento grid */
+    background-color: #ccc; /* The color of the thin grid lines */
+}
+
+/* Each direct child gets a solid background to form the panels */
+#app > header,
+#app > main,
+#app > footer {
+    background-color: #fff;
+    padding: 20px 30px;
+}
+
+/* Header Panel: Audio Controls (and future settings) */
+#top-panel {
     display: flex;
-    flex-direction: column;
+    justify-content: flex-end;
     align-items: center;
 }
 
-/* Game Area is the absolute background */
+#toggle-music {
+    background: transparent;
+    border: none;
+    color: #111;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    text-decoration: underline dotted;
+    text-underline-offset: 4px;
+}
+#toggle-music:hover {
+    background: yellow;
+    text-decoration: underline solid;
+}
+
+/* Game Area: Center Panel */
 #game-area {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1;
+    overflow: hidden;
     cursor: grab;
 }
 #game-area:active {
     cursor: grabbing;
 }
 
-/* CSS Sprite Animation for the Cat */
-/* Vertical sprite sheets */
+/* Character */
 #cat-sprite {
     width: 32px;
     height: 32px;
-    transform: scale(14); /* Giant pixel cat in the center */
-    /* Shift the cat UP slightly so it isn't hidden by the chat box below it */
-    transform-origin: center center;
-    margin-top: -20vh; 
+    transform: scale(10);
     image-rendering: pixelated;
     background-repeat: no-repeat;
     background-position: left top;
-    opacity: 0.5;
-    transition: opacity 0.3s;
+    transition: transform 0.2s;
 }
+
 #game-area:hover #cat-sprite {
-    opacity: 0.8; /* Brighten slightly on hover */
+    transform: scale(10.5);
 }
 
-/* 6 frames: 32 * 6 = 192 */
-.cat-idle {
-    background-image: url('/static/white-cat-idle.png');
-    animation: play-idle 1s steps(6) infinite;
-}
+/* Animations */
+.cat-idle { background-image: url('/static/white-cat-idle.png'); animation: play-idle 1s steps(6) infinite; }
 @keyframes play-idle { 100% { background-position: left -192px; } }
-
-/* 6 frames */
-.cat-run {
-    background-image: url('/static/white-cat-run.png');
-    animation: play-run 0.6s steps(6) infinite;
-}
+.cat-run { background-image: url('/static/white-cat-run.png'); animation: play-run 0.6s steps(6) infinite; }
 @keyframes play-run { 100% { background-position: left -192px; } }
-
-/* 26 frames: 32 * 26 = 832 */
-.cat-rush {
-    background-image: url('/static/white-cat-rush.png');
-    animation: play-rush 1.3s steps(26) infinite;
-}
+.cat-rush { background-image: url('/static/white-cat-rush.png'); animation: play-rush 1.3s steps(26) infinite; }
 @keyframes play-rush { 100% { background-position: left -832px; } }
-
-/* 4 frames: 128 */
-.cat-damage {
-    background-image: url('/static/white-cat-damage.png');
-    animation: play-damage 0.5s steps(4) infinite;
-}
+.cat-damage { background-image: url('/static/white-cat-damage.png'); animation: play-damage 0.5s steps(4) infinite; }
 @keyframes play-damage { 100% { background-position: left -128px; } }
-
-/* 7 frames: 224 */
-.cat-die {
-    background-image: url('/static/white-cat-die.png');
-    animation: play-die 1s steps(7) forwards;
-}
+.cat-die { background-image: url('/static/white-cat-die.png'); animation: play-die 1s steps(7) forwards; }
 @keyframes play-die { 100% { background-position: left -224px; } }
 
-/* Chat Overlay */
-#chat-overlay {
-    position: absolute;
-    bottom: 40px; /* Pin to bottom */
-    z-index: 10;
-    width: 90%;
-    max-width: 650px;
-    height: 40vh; /* Shorter height so it doesn't block the screen */
+/* Chat Panel: Bottom Panel */
+#bottom-panel {
     display: flex;
     flex-direction: column;
-    background: transparent; 
-    padding: 20px 30px;
+    position: relative;
+    height: 100%;
 }
 
 #chat-history {
     flex-grow: 1;
-    overflow-y: hidden; /* Hide scroll normally */
+    overflow-y: hidden;
     margin-bottom: 20px;
     padding-right: 15px;
     line-height: 1.5;
     font-size: 17px;
-    mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
+    /* Soft fade at top */
+    mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 100%);
 }
 
-#chat-overlay:hover #chat-history {
-    overflow-y: auto; /* Allow scroll on hover */
+#bottom-panel:hover #chat-history {
+    overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    scrollbar-color: #ddd transparent;
 }
 
-/* Custom WebKit Scrollbar */
 #chat-history::-webkit-scrollbar {
     width: 6px;
     background: transparent;
 }
 #chat-history::-webkit-scrollbar-thumb {
-    background: transparent;
+    background: #ddd;
     border-radius: 3px;
-}
-#chat-overlay:hover #chat-history::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
 }
 
 .message {
     margin-bottom: 25px;
     word-wrap: break-word;
-    text-shadow: 0px 2px 4px rgba(0,0,0,0.8); /* Readability over sprite */
 }
 
 .msg-prefix {
     font-weight: bold;
-    color: #fff;
 }
 
 .msg-system {
-    color: #999;
+    color: #888;
 }
 
 .msg-error {
-    color: #ff5555;
+    color: #cc0000;
 }
 
 #typing-indicator {
@@ -163,7 +158,6 @@ body, html {
     margin-bottom: 10px;
     height: 20px;
     transition: opacity 0.2s;
-    text-shadow: 0px 1px 2px rgba(0,0,0,0.8);
 }
 .hidden {
     opacity: 0;
@@ -176,45 +170,21 @@ body, html {
 
 #chat-input {
     width: 100%;
-    background: rgba(0, 0, 0, 0.4); /* Slightly darker backing for input */
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 12px 15px;
+    border: none;
+    border-bottom: 1px dotted #ccc;
+    padding: 10px 0;
     outline: none;
-    color: #fff;
+    background: transparent;
+    color: #111;
     font-family: inherit;
     font-size: 16px;
     line-height: 1.4;
     resize: none;
-    backdrop-filter: blur(4px);
     transition: border-color 0.2s;
 }
 #chat-input:focus {
-    border-color: rgba(255, 255, 255, 0.3);
+    border-bottom: 1px solid #111;
 }
 #chat-input::placeholder {
-    color: #777;
-}
-
-.audio-controls {
-    position: absolute;
-    top: 20px; /* Moved to top so it doesn't collide with chat */
-    right: 20px;
-    z-index: 10;
-}
-
-#toggle-music {
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #aaa;
-    padding: 6px 12px;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 13px;
-    transition: all 0.2s;
-    border-radius: 4px;
-}
-#toggle-music:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    color: #bbb;
 }
