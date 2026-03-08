@@ -110,6 +110,9 @@ class WildroseGame:
                 elif event.type == pg.MOUSEBUTTONDOWN:
                     if event.pos[0] > self.chat_w:
                         self.mouse_down = True
+                    else:
+                        # Clicked inside chat area
+                        self.chat_ui.active = True
                 elif event.type == pg.MOUSEBUTTONUP:
                     self.mouse_down = False
                 elif event.type == pg.MOUSEMOTION:
