@@ -287,8 +287,15 @@ Guidelines:
                 if msg.id not in self.seen_message_ids:
                     self.seen_message_ids.add(msg.id)
                     if isinstance(msg, AIMessage) and msg.content:
-                        if self.chat:
-                            self.chat.add_message(f"{msg.content}", "eve")
+                        # Do not display intermediate thought messages if they are just executing a tool
+                        # Often Gemini returns an AIMessage with content="" and tool_calls=[...]
+                        # Sometimes it returns content="Let me check" and tool_calls=[...].
+                        # To prevent duplicate/annoying inner thoughts, we only display it
+                        # if it's the final answer (no tool calls) OR we just accept we only want the final message.
+                        # Wait, we can just check if tool_calls is empty.
+                        if not hasattr(msg, "tool_calls") or not msg.tool_calls:
+                            if self.chat:
+                                self.chat.add_message(f"{msg.content}", "eve")
                     elif isinstance(msg, ToolMessage):
                         # Tool execution results
                         pass

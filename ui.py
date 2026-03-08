@@ -3,17 +3,16 @@ import time
 
 
 class Colors:
-    BG = (255, 255, 255)  # TCI uses stark, pure white backgrounds
-    BORDER = (0, 0, 0)  # Sharp black borders
-    TEXT_DEFAULT = (0, 0, 0)  # TCI relies on pure black text
-    TEXT_DIM = (150, 150, 150)  # Subdued grey for hints
+    BG = (255, 255, 255)  # Pure white
+    BORDER = (230, 230, 230)  # Very soft grey, almost invisible
+    TEXT_DEFAULT = (10, 10, 10)  # Almost black
+    TEXT_DIM = (160, 160, 160)  # Soft grey for hints
 
-    # We strip out the neon colors to match TCI's monochromatic vibe
-    # We will differentiate users using bold prefixes rather than rainbow colors
-    EVE = (0, 0, 0)
-    USER = (0, 0, 0)
-    SYSTEM = (100, 100, 100)  # System messages slightly grey
-    ERROR = (200, 0, 0)  # Errors can stay red for visibility
+    # Monochromatic
+    EVE = (10, 10, 10)
+    USER = (10, 10, 10)
+    SYSTEM = (120, 120, 120)
+    ERROR = (200, 0, 0)
 
 
 def wrap_text(text: str, font: pg.font.Font, max_width: int):
@@ -48,7 +47,7 @@ def wrap_text(text: str, font: pg.font.Font, max_width: int):
 
 
 class ChatUI:
-    def __init__(self, surface: pg.Surface, font_size=18):
+    def __init__(self, surface: pg.Surface, font_size=17):
         self.surface = surface
         self.font = None
         self.font_bold = None
@@ -74,20 +73,18 @@ class ChatUI:
         if not self.font:
             pg.font.init()
             try:
-                # TCI uses clean, legible serif or sans-serif (usually system default sans-serif like Helvetica or Arial)
-                # But they rely on whitespace and sizing.
-                self.font = pg.font.SysFont(
-                    "helvetica, arial, sans-serif", self.font_size
-                )
+                # TCI essay vibe: simple serif for a more literary feel, or very clean sans-serif
+                # We will try a clean sans-serif but size it well
+                self.font = pg.font.SysFont("helvetica, arial", self.font_size)
                 self.font_bold = pg.font.SysFont(
-                    "helvetica, arial, sans-serif", self.font_size, bold=True
+                    "helvetica, arial", self.font_size, bold=True
                 )
             except:
                 self.font = pg.font.Font(None, self.font_size)
                 self.font_bold = pg.font.Font(None, self.font_size)
                 self.font_bold.set_bold(True)
-        # TCI has extremely generous line height (often 1.5x to 2x)
-        self.line_height = int(self.font.get_linesize() * 1.6)
+        # TCI has extremely generous line height
+        self.line_height = int(self.font.get_linesize() * 1.5)
 
     def add_message(self, text: str, sender: str = "system"):
         color = Colors.TEXT_DEFAULT
@@ -193,15 +190,14 @@ class ChatUI:
 
         chat_x, chat_y, chat_w, chat_h = rect.x, rect.y, rect.width, rect.height
 
-        # TCI has massive padding/margins
-        padding_x = 35
-        padding_y = 40
+        # Massive padding/margins to match TCI editorial feel
+        padding_x = 40
+        padding_y = 50
 
         # Background
         pg.draw.rect(self.surface, Colors.BG, rect)
 
-        # Right border - TCI uses very thin, elegant black lines, or sometimes no lines at all,
-        # but a 1px solid black border is a good architectural divider
+        # Right border - soft and subtle, rather than stark black
         pg.draw.line(
             self.surface,
             Colors.BORDER,
@@ -213,25 +209,19 @@ class ChatUI:
         # 1. Calculate Input Area Height
         wrapped_input = []
         for line in self.input_lines:
-            # Wrap based on font
             wrapped = wrap_text(line, self.font, chat_w - (padding_x * 2))
             if not wrapped:
                 wrapped = [""]
             wrapped_input.extend(wrapped)
 
         visible_input_lines = min(max(1, len(wrapped_input)), 5)
-        # Input area padding is slightly tighter
-        input_h = (visible_input_lines * self.font.get_linesize()) + 40
+        # Input area padding
+        input_h = (visible_input_lines * self.font.get_linesize()) + 60
         input_y = chat_y + chat_h - input_h
 
-        # Top border of input box - sharp 1px line
-        pg.draw.line(
-            self.surface,
-            Colors.BORDER,
-            (chat_x, input_y),
-            (chat_x + chat_w, input_y),
-            1,
-        )
+        # Top border of input box - no border! TCI style is borderless and airy.
+        # We just let it float.
+        # (Removed pg.draw.line here)
 
         # 2. Draw Messages (History)
         history_h = chat_h - input_h
@@ -246,7 +236,10 @@ class ChatUI:
             # If it has a prefix (like "Eve: "), we need to account for it in the first line
             # TCI often uses bold for names and normal for body
             prefix = msg.get("prefix", "")
-            prefix_w, _ = self.font_bold.size(prefix) if prefix else (0, 0)
+            if prefix and self.font_bold:
+                prefix_w, _ = self.font_bold.size(prefix)
+            else:
+                prefix_w = 0
 
             # We must wrap text considering the prefix on the first line
             # Pygame text rendering doesn't natively support mixing bold/normal on one line easily,
@@ -308,7 +301,7 @@ class ChatUI:
                 for i, line in enumerate(msg["lines"]):
                     # Render prefix if it's the very first line
                     offset_x = 0
-                    if i == 0 and msg["prefix"]:
+                    if i == 0 and msg["prefix"] and self.font_bold:
                         prefix_surf = self.font_bold.render(
                             msg["prefix"], True, Colors.TEXT_DEFAULT
                         )
