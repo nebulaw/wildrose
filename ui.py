@@ -47,7 +47,7 @@ def wrap_text(text: str, font: pg.font.Font, max_width: int):
 
 
 class ChatUI:
-    def __init__(self, surface: pg.Surface, font_size=17):
+    def __init__(self, surface: pg.Surface, font_size=15):
         self.surface = surface
         self.font = None
         self.font_bold = None
@@ -73,18 +73,19 @@ class ChatUI:
         if not self.font:
             pg.font.init()
             try:
-                # TCI essay vibe: simple serif for a more literary feel, or very clean sans-serif
-                # We will try a clean sans-serif but size it well
-                self.font = pg.font.SysFont("helvetica, arial", self.font_size)
+                # TCI primarily uses a monospace typewriter font (Courier) for their essays and entire body
+                self.font = pg.font.SysFont(
+                    "courier, courier new, monospace", self.font_size
+                )
                 self.font_bold = pg.font.SysFont(
-                    "helvetica, arial", self.font_size, bold=True
+                    "courier, courier new, monospace", self.font_size, bold=True
                 )
             except:
                 self.font = pg.font.Font(None, self.font_size)
                 self.font_bold = pg.font.Font(None, self.font_size)
                 self.font_bold.set_bold(True)
-        # TCI has extremely generous line height
-        self.line_height = int(self.font.get_linesize() * 1.5)
+        # Standard readable line height for Courier
+        self.line_height = int(self.font.get_linesize() * 1.4)
 
     def add_message(self, text: str, sender: str = "system"):
         color = Colors.TEXT_DEFAULT
@@ -191,8 +192,8 @@ class ChatUI:
         chat_x, chat_y, chat_w, chat_h = rect.x, rect.y, rect.width, rect.height
 
         # Massive padding/margins to match TCI editorial feel
-        padding_x = 40
-        padding_y = 50
+        padding_x = 30
+        padding_y = 30
 
         # Background
         pg.draw.rect(self.surface, Colors.BG, rect)
@@ -216,7 +217,7 @@ class ChatUI:
 
         visible_input_lines = min(max(1, len(wrapped_input)), 5)
         # Input area padding
-        input_h = (visible_input_lines * self.font.get_linesize()) + 60
+        input_h = (visible_input_lines * self.font.get_linesize()) + 40
         input_y = chat_y + chat_h - input_h
 
         # Top border of input box - no border! TCI style is borderless and airy.
@@ -276,8 +277,8 @@ class ChatUI:
 
             # Calculate height using the TCI generous line_height
             h = len(lines_data) * self.line_height
-            # Add huge paragraph spacing (TCI style)
-            total_msg_height += h + (self.line_height)
+            # Add paragraph spacing (TCI style)
+            total_msg_height += h + (self.line_height // 2)
 
             wrapped_messages.append(
                 {
@@ -315,7 +316,8 @@ class ChatUI:
             else:
                 current_y += msg["height"]
 
-            current_y += self.line_height  # TCI huge margin between messages
+            # TCI uses a smaller break between paragraphs than massive padding
+            current_y += self.line_height // 2
 
         if self.is_typing:
             if current_y + self.line_height > chat_y and current_y < chat_y + history_h:
