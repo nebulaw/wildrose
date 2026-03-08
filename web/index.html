@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wildrose - Eve</title>
+    <link rel="stylesheet" href="/web/css/main.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Sidebar Chat (The Creative Independent Style) -->
+        <aside id="chat-sidebar">
+            <div id="chat-history">
+                <!-- Messages will be injected here -->
+            </div>
+            <div id="typing-indicator" class="hidden">Eve is typing...</div>
+            <div id="chat-input-container">
+                <textarea id="chat-input" placeholder="Click here or press 'T' to reply..." rows="1"></textarea>
+            </div>
+        </aside>
+
+        <!-- Main Game Area -->
+        <main id="game-area">
+            <!-- The pixel cat sprite will be animated using CSS -->
+            <div id="cat-sprite" class="cat-idle"></div>
+            
+            <div class="audio-controls">
+                <button id="toggle-music">🔊 Play Music</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Audio assets -->
+    <audio id="bg-music" loop src="/static/faraon-harold-budd.wav"></audio>
+    <audio id="sfx-purr" src="/static/purring-1.ogg" preload="auto"></audio>
+    <audio id="sfx-meow" src="/static/meow.wav" preload="auto"></audio>
+
+    <script src="/web/js/main.js"></script>
+</body>
+</html>
