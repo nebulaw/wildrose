@@ -290,14 +290,25 @@ Guidelines:
                     self.seen_message_ids.add(msg.id)
                     if isinstance(msg, AIMessage) and msg.content:
                         # Do not display intermediate thought messages if they are just executing a tool
-                        # Often Gemini returns an AIMessage with content="" and tool_calls=[...]
-                        # Sometimes it returns content="Let me check" and tool_calls=[...].
-                        # To prevent duplicate/annoying inner thoughts, we only display it
-                        # if it's the final answer (no tool calls) OR we just accept we only want the final message.
-                        # Wait, we can just check if tool_calls is empty.
                         if not hasattr(msg, "tool_calls") or not msg.tool_calls:
-                            if self.chat:
-                                self.chat.add_message(f"{msg.content}", "eve")
+                            # Content can sometimes be a list of blocks (Gemini/Claude format)
+                            # e.g. [{"type": "text", "text": "Hello"}]
+                            content_text = ""
+                            if isinstance(msg.content, str):
+                                content_text = msg.content
+                            elif isinstance(msg.content, list):
+                                parts = []
+                                for block in msg.content:
+                                    if isinstance(block, dict) and "text" in block:
+                                        parts.append(block["text"])
+                                    elif isinstance(block, str):
+                                        parts.append(block)
+                                content_text = " ".join(parts)
+                            else:
+                                content_text = str(msg.content)
+
+                            if self.chat and content_text.strip():
+                                self.chat.add_message(content_text, "eve")
                     elif isinstance(msg, ToolMessage):
                         # Tool execution results
                         pass
