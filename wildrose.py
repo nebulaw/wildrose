@@ -16,6 +16,7 @@ try:
 except (ImportError, NotImplementedError, AttributeError):
     pass
 
+
 class WildroseMixer:
     def __init__(self, bg_music=None):
         if not MIXER_AVAILABLE:
@@ -42,6 +43,7 @@ class WildroseMixer:
         if not MIXER_AVAILABLE:
             return
         self._bg_music_channel.play(self._bg_music, loops=loops, fade_ms=2000)
+
 
 class WildroseGame:
     WIDTH = 800
@@ -74,7 +76,8 @@ class WildroseGame:
         )
         self.mouse_down = False
         # init AI and Chat
-        from ai import ChatUI, LLMBrain
+        from ui import ChatUI
+        from ai import LLMBrain
 
         self.chat_ui = ChatUI(self.window)
         self.brain = LLMBrain(self.white_car, chat_handler=self.chat_ui)
@@ -129,13 +132,13 @@ class WildroseGame:
             self.brain.update()
 
             self._fill_background(c.Color.BLACK.value)
-            
+
             w, h = self.window.get_size()
-            
+
             # Responsive UI layout - The Creative Independent style left-sidebar
             # We enforce a minimum and maximum chat width
             chat_w = max(250, min(400, w // 3))
-            
+
             # Create a subsurface for the right side (where the car lives)
             # The sprite's draw_centered method magically centers within this sub-surface
             if w > chat_w:
@@ -153,6 +156,7 @@ class WildroseGame:
             pg.display.update()
             self.clock.tick(60)
         self._quit()
+
 
 if __name__ == "__main__":
     WildroseGame().start()
