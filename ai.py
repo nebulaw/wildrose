@@ -226,8 +226,10 @@ class LLMBrain:
         return "Running"
 
     def _say(self, message: str):
-        if self.chat:
-            self.chat.add_message(message, "eve")
+        # Note: We do NOT use self.chat.add_message here anymore!
+        # Because LangGraph returns the full AIMessage text at the end of the chain,
+        # if we add the message here, it prints once during the tool call,
+        # and then the `_llm_worker` loop prints it again, causing duplicates.
         return f"Said: {message}"
 
     def _get_context(self) -> str:
