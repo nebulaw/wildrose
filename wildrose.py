@@ -13,7 +13,7 @@ try:
     mixer.init()
     MIXER_AVAILABLE = True
 except (ImportError, NotImplementedError, AttributeError):
-    pass
+    mixer = None
 
 
 class WildroseMixer:

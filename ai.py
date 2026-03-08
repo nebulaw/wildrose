@@ -23,7 +23,9 @@ load_env()
 
 
 class Tool:
-    def __init__(self, name: str, func: Callable, desc: str, params: Dict = None):
+    def __init__(
+        self, name: str, func: Callable, desc: str, params: Dict | None = None
+    ):
         self.name, self.func, self.desc = name, func, desc
         self.params = params or {}
 
@@ -38,7 +40,7 @@ class Tool:
         }
 
     def to_gemini_schema(self) -> Dict:
-        schema = {
+        schema: Dict[str, Any] = {
             "name": self.name,
             "description": self.desc,
         }
@@ -145,7 +147,7 @@ You can move around, make sounds, and chat with the user. Be playful and cat-lik
 
         self._make_llm_decision(f"User said: '{message}'. How do you respond?")
 
-    def _make_llm_decision(self, context: str = None):
+    def _make_llm_decision(self, context: str | None = None):
         if self.is_thinking:
             return
         self.is_thinking = True
@@ -367,6 +369,8 @@ class ChatUI:
     def draw(self):
         if not self.font:
             self.init_font()
+        if not self.font:
+            return
 
         import pygame as pg
 
