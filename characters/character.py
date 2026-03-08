@@ -1,7 +1,12 @@
 import pygame as pg
 from .sprite import CharacterSprite
 
-# animations are predefined atm
+try:
+    pg.mixer.Channel
+    MIXER_AVAILABLE = True
+except (AttributeError, NotImplementedError):
+    MIXER_AVAILABLE = False
+
 ANIMATIONS = ["idle", "run", "rush", "damage", "die"]
 ST_IDLE, ST_RUN, ST_RUSH, ST_DAMAGE, ST_DIE = range(5)
 
@@ -44,24 +49,29 @@ class WhiteCar(Character):
             frame_cooldown=120,
         )
         super().__init__(name="white-cat", sprite=spr, *args, **kwargs)
-        self.sound_channel = pg.mixer.Channel(2)
-        self.sound_purring = pg.mixer.Sound("static/purring-1.ogg")
-        self.sound_meow = pg.mixer.Sound("static/meow.wav")
+        if MIXER_AVAILABLE:
+            self.sound_channel = pg.mixer.Channel(2)
+            self.sound_purring = pg.mixer.Sound("static/purring-1.ogg")
+            self.sound_meow = pg.mixer.Sound("static/meow.wav")
         self.purring = False
         self.meowing = False
         self.mouse_down = False
         self.patting = False
     def meow(self):
+        if not MIXER_AVAILABLE: return
         if self.sound_channel.get_busy(): self.sound_channel.stop()
         self.sound_channel.play(self.sound_meow)
         self.purring = False
     def purr(self):
+        if not MIXER_AVAILABLE: return
         if self.purring: return
         if self.sound_channel.get_busy(): self.sound_channel.stop()
         self.sound_channel.play(self.sound_purring, loops=-1)
         self.purring = True
     def stop_purr(self):
+        if not MIXER_AVAILABLE: return
         if self.purring and self.sound_channel.get_busy(): self.sound_channel.stop(); self.purring = False
+    def sound(self): pass
     def set_action(self, action=ST_IDLE):
         if self.alive:
             self.action = action

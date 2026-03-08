@@ -1,4 +1,9 @@
 import pygame as pg
+try:
+    from PIL import Image
+    PIL_AVAILABLE = True
+except ImportError:
+    PIL_AVAILABLE = False
 
 class CharacterSprite:
     """Sprite system: loads actions, advances frames, renders surfaces."""
@@ -77,4 +82,8 @@ class CharacterSprite:
                 frames.append(surf)
             self._frames.append(frames)
     @staticmethod
-    def _load_image(path: str) -> pg.Surface: return pg.image.load(path).convert_alpha()
+    def _load_image(path: str) -> pg.Surface:
+        if PIL_AVAILABLE:
+            img = Image.open(path).convert("RGBA")
+            return pg.image.fromstring(img.tobytes(), img.size, img.mode).convert_alpha()
+        return pg.image.load(path).convert_alpha()
