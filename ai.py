@@ -54,17 +54,16 @@ class LLMBrain:
         self.thread_id = "wildrose_user"
         self.config = {"configurable": {"thread_id": self.thread_id}}
 
-        # Initial greeting and status
-        if self.chat:
-            self.chat.add_message(f"AI initialized via '{self.provider}'", "system")
-            if self.provider == "gemini" and not self.gemini_api_key:
+        # Message queue to never drop user inputs if AI is currently thinking
+        self.message_queue = []
+
+        # Only warn if explicitly missing API key and using Gemini
+        if self.provider == "gemini" and not self.gemini_api_key:
+            if self.chat:
                 self.chat.add_message(
                     "GEMINI_API_KEY is empty! Please check ~/.wildrose/config.json",
                     "error",
                 )
-            elif self.provider == "ollama":
-                model = config.get("ollama_model", "mistral:7b")
-                self.chat.add_message(f"Ollama model set to '{model}'", "system")
 
         # Start background check for initial greeting without locking main thread
         threading.Thread(target=self._initial_greet, daemon=True).start()
@@ -221,7 +220,15 @@ Guidelines:
 """
 
     def process_user_message(self, message: str):
-        self._make_llm_decision(f"User said: '{message}'. How do you respond?")
+        self.message_queue.append(f"User said: '{message}'. How do you respond?")
+        self._pump_queue()
+
+    def _pump_queue(self):
+        if self.is_thinking or not self.message_queue:
+            return
+
+        prompt = self.message_queue.pop(0)
+        self._make_llm_decision(prompt)
 
     def _make_llm_decision(self, context: str | None = None):
         if self.is_thinking:
@@ -232,7 +239,7 @@ Guidelines:
         system_prompt = self._get_context()
 
         if self.chat:
-            self.chat.add_message("...", "system")
+            self.chat.add_message("Eve is typing...", "system")
 
         threading.Thread(
             target=self._llm_worker, args=(prompt, system_prompt), daemon=True
@@ -282,6 +289,11 @@ Guidelines:
             self._idle()
         finally:
             self.is_thinking = False
+            self.last_decision = time.time()
+
+            # Continue processing queued messages if any exist
+            if self.message_queue:
+                self._pump_queue()
 
     def update(self):
         current_time = time.time()
@@ -293,6 +305,7 @@ Guidelines:
             and time_since_action > self.idle_threshold
             and self.char.action == 0
             and not self.is_thinking
+            and not self.message_queue
         ):
             self._make_llm_decision()
             self.last_decision = current_time
