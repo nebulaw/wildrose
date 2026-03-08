@@ -75,6 +75,7 @@ class WildroseGame:
             root_surface=self.window, sprite_scale=16.0, fill_width=False
         )
         self.mouse_down = False
+        self.chat_w = 300  # Default chat width
         # init AI and Chat
         from ui import ChatUI
         from ai import LLMBrain
@@ -107,11 +108,12 @@ class WildroseGame:
                 if event.type == pg.QUIT:
                     self._set_running(False)
                 elif event.type == pg.MOUSEBUTTONDOWN:
-                    self.mouse_down = True
+                    if event.pos[0] > self.chat_w:
+                        self.mouse_down = True
                 elif event.type == pg.MOUSEBUTTONUP:
                     self.mouse_down = False
                 elif event.type == pg.MOUSEMOTION:
-                    if self.mouse_down:
+                    if self.mouse_down and event.pos[0] > self.chat_w:
                         self.white_car.set_action(action=chr.ST_DAMAGE)
                 elif event.type == pg.KEYDOWN:
                     if event.key == pg.K_q:
@@ -137,12 +139,12 @@ class WildroseGame:
 
             # Responsive UI layout - The Creative Independent style left-sidebar
             # We enforce a minimum and maximum chat width
-            chat_w = max(250, min(400, w // 3))
+            self.chat_w = max(250, min(400, w // 3))
 
             # Create a subsurface for the right side (where the car lives)
             # The sprite's draw_centered method magically centers within this sub-surface
-            if w > chat_w:
-                game_rect = pg.Rect(chat_w, 0, w - chat_w, h)
+            if w > self.chat_w:
+                game_rect = pg.Rect(self.chat_w, 0, w - self.chat_w, h)
                 try:
                     game_surface = self.window.subsurface(game_rect)
                     self.white_car.root_surface = game_surface
@@ -151,7 +153,7 @@ class WildroseGame:
                     pass
 
             # Draw chat ui on the left
-            self.chat_ui.draw(pg.Rect(0, 0, chat_w, h))
+            self.chat_ui.draw(pg.Rect(0, 0, self.chat_w, h))
 
             pg.display.update()
             self.clock.tick(60)
